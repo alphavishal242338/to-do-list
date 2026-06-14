@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>To-Do Web App — Task 04</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+    }
+
+    .container { max-width: 620px; margin: 0 auto; }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #7F77DD, #534AB7);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      color: #fff;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .header h1 { font-size: 20px; font-weight: 600; }
+    .header p  { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+    .stats {
+      display: flex;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+    .stat-pill {
+      background: rgba(255,255,255,0.18);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* Add task card */
+    .add-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .add-card h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.75rem;
+    }
+    .form-group { margin-bottom: 10px; }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 0.6rem 0.9rem;
+      font-size: 14px;
+      color: #1a1a2e;
+      background: #f9fafb;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #7F77DD;
+      box-shadow: 0 0 0 3px rgba(127,119,221,0.15);
+      background: #fff;
+    }
+    textarea { resize: vertical; min-height: 60px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .add-btn {
+      width: 100%;
+      background: #7F77DD;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .add-btn:hover  { opacity: 0.9; }
+    .add-btn:active { transform: scale(0.98); }
+
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 13px;
+      color: #6b7280;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .filter-btn.active {
+      background: #7F77DD;
+      border-color: #7F77DD;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    /* Search */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .search-wrap input {
+      padding-left: 2.25rem;
+    }
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      color: #9ca3af;
+      pointer-events: none;
+    }
+
+    /* Task list */
+    .tasks-wrap { display: flex; flex-direction: column; gap: 10px; }
+
+    .task-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border-left: 4px solid #7F77DD;
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+    }
+    .task-card:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+    .task-card.done  { border-left-color: #10b981; opacity: 0.75; }
+    .task-card.priority-high   { border-left-color: #ef4444; }
+    .task-card.priority-medium { border-left-color: #f59e0b; }
+    .task-card.priority-low    { border-left-color: #10b981; }
+    .task-card.done.priority-high,
+    .task-card.done.priority-medium,
+    .task-card.done.priority-low { border-left-color: #10b981; }
+
+    .task-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .task-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #d1d5db;
+      flex-shrink: 0;
+      margin-top: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .task-check.checked {
+      background: #10b981;
+      border-color: #10b981;
+    }
+    .task-check.checked::after {
+      content: '✓';
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .task-body { flex: 1; min-width: 0; }
+    .task-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: #1a1a2e;
+      margin-bottom: 3px;
+      word-break: break-word;
+    }
+    .task-card.done .task-title {
+      text-decoration: line-through;
+      color: #9ca3af;
+    }
+    .task-desc {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .meta-tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .tag-date     { background: #ede9fe; color: #5b21b6; }
+    .tag-time     { background: #e0f2fe; color: #0369a1; }
+    .tag-high     { background: #fee2e2; color: #991b1b; }
+    .tag-medium   { background: #fef3c7; color: #92400e; }
+    .tag-low      { background: #d1fae5; color: #065f46; }
+    .tag-category { background: #f3f4f6; color: #374151; }
+
+    .task-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 0.6rem;
+      justify-content: flex-end;
+    }
+    .act-btn {
+      background: #f3f4f6;
+      border: none;
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      color: #374151;
+      transition: background 0.15s;
+    }
+    .act-btn:hover { background: #e5e7eb; }
+    .act-btn.del { color: #ef4444; }
+    .act-btn.del:hover { background: #fee2e2; }
+
+    /* Edit modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1a1a2e;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 1rem;
+    }
+    .cancel-btn {
+      flex: 1;
+      background: #f3f4f6;
+      border: none;
+      border-radius: 10px;
+      padding: 0.7rem;
+      font-size: 14px;
+      cursor: pointer;
+      color: #374151;
+    }
+    .save-btn {
+      flex: 2;
+      background: #7F77DD;
+      border: none;
+      border-radius: 10px;
+      padding: 0.7rem;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: #9ca3af;
+      font-size: 14px;
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 0.75rem; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <h1>📋 To-Do Web App</h1>
+        <p>SkillCraft Technology — Task 04</p>
+      </div>
+      <div id="today-date" style="font-size:12px; opacity:0.8; text-align:right;"></div>
+    </div>
+    <div class="stats">
+      <div class="stat-pill" id="stat-total">0 Total</div>
+      <div class="stat-pill" id="stat-done">0 Done</div>
+      <div class="stat-pill" id="stat-pending">0 Pending</div>
+    </div>
+  </div>
+
+  <!-- Add Task -->
+  <div class="add-card">
+    <h2>➕ Add New Task</h2>
+    <div class="form-group">
+      <label>Task Title *</label>
+      <input type="text" id="inp-title" placeholder="What needs to be done?" />
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="inp-desc" placeholder="Optional details…"></textarea>
+    </div>
+    <div class="row2">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="inp-date" />
+      </div>
+      <div class="form-group">
+        <label>Time</label>
+        <input type="time" id="inp-time" />
+      </div>
+    </div>
+    <div class="row2">
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="inp-priority">
+          <option value="medium">🟡 Medium</option>
+          <option value="high">🔴 High</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="inp-category">
+          <option value="General">General</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+          <option value="Study">Study</option>
+          <option value="Health">Health</option>
+          <option value="Shopping">Shopping</option>
+        </select>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addTask()">Add Task</button>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search-inp" placeholder="Search tasks…" oninput="renderTasks()" />
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all"     onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn"        data-filter="pending" onclick="setFilter('pending',this)">Pending</button>
+    <button class="filter-btn"        data-filter="done"    onclick="setFilter('done',this)">Completed</button>
+    <button class="filter-btn"        data-filter="high"    onclick="setFilter('high',this)">🔴 High</button>
+    <button class="filter-btn"        data-filter="medium"  onclick="setFilter('medium',this)">🟡 Medium</button>
+    <button class="filter-btn"        data-filter="low"     onclick="setFilter('low',this)">🟢 Low</button>
+  </div>
+
+  <!-- Task list -->
+  <div class="tasks-wrap" id="tasks-list"></div>
+
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>✏️ Edit Task</h2>
+    <div class="form-group">
+      <label>Task Title *</label>
+      <input type="text" id="edit-title" />
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="edit-desc"></textarea>
+    </div>
+    <div class="row2">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="edit-date" />
+      </div>
+      <div class="form-group">
+        <label>Time</label>
+        <input type="time" id="edit-time" />
+      </div>
+    </div>
+    <div class="row2">
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="edit-priority">
+          <option value="medium">🟡 Medium</option>
+          <option value="high">🔴 High</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="edit-category">
+          <option value="General">General</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+          <option value="Study">Study</option>
+          <option value="Health">Health</option>
+          <option value="Shopping">Shopping</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+      <button class="save-btn"   onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let tasks = JSON.parse(localStorage.getItem('sc_tasks') || '[]');
+  let filter = 'all';
+  let editId = null;
+
+  // Set today's date in header
+  const now = new Date();
+  document.getElementById('today-date').textContent =
+    now.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+
+  // Set default date to today
+  document.getElementById('inp-date').value = now.toISOString().split('T')[0];
+
+  function save() {
+    localStorage.setItem('sc_tasks', JSON.stringify(tasks));
+  }
+
+  function addTask() {
+    const title = document.getElementById('inp-title').value.trim();
+    if (!title) { alert('Please enter a task title.'); return; }
+    const task = {
+      id:       Date.now(),
+      title,
+      desc:     document.getElementById('inp-desc').value.trim(),
+      date:     document.getElementById('inp-date').value,
+      time:     document.getElementById('inp-time').value,
+      priority: document.getElementById('inp-priority').value,
+      category: document.getElementById('inp-category').value,
+      done:     false,
+      created:  Date.now()
+    };
+    tasks.unshift(task);
+    save();
+    // Reset form
+    document.getElementById('inp-title').value = '';
+    document.getElementById('inp-desc').value  = '';
+    document.getElementById('inp-time').value  = '';
+    document.getElementById('inp-priority').value = 'medium';
+    document.getElementById('inp-category').value = 'General';
+    document.getElementById('inp-date').value  = new Date().toISOString().split('T')[0];
+    renderTasks();
+  }
+
+  function toggleDone(id) {
+    const t = tasks.find(t => t.id === id);
+    if (t) { t.done = !t.done; save(); renderTasks(); }
+  }
+
+  function deleteTask(id) {
+    if (!confirm('Delete this task?')) return;
+    tasks = tasks.filter(t => t.id !== id);
+    save(); renderTasks();
+  }
+
+  function openEdit(id) {
+    const t = tasks.find(t => t.id === id);
+    if (!t) return;
+    editId = id;
+    document.getElementById('edit-title').value    = t.title;
+    document.getElementById('edit-desc').value     = t.desc;
+    document.getElementById('edit-date').value     = t.date;
+    document.getElementById('edit-time').value     = t.time;
+    document.getElementById('edit-priority').value = t.priority;
+    document.getElementById('edit-category').value = t.category;
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    editId = null;
+  }
+
+  function saveEdit() {
+    const title = document.getElementById('edit-title').value.trim();
+    if (!title) { alert('Title cannot be empty.'); return; }
+    const t = tasks.find(t => t.id === editId);
+    if (t) {
+      t.title    = title;
+      t.desc     = document.getElementById('edit-desc').value.trim();
+      t.date     = document.getElementById('edit-date').value;
+      t.time     = document.getElementById('edit-time').value;
+      t.priority = document.getElementById('edit-priority').value;
+      t.category = document.getElementById('edit-category').value;
+      save(); closeModal(); renderTasks();
+    }
+  }
+
+  function setFilter(f, btn) {
+    filter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTasks();
+  }
+
+  function formatDate(d) {
+    if (!d) return '';
+    const [y,m,day] = d.split('-');
+    return `${day}/${m}/${y}`;
+  }
+
+  function formatTime(t) {
+    if (!t) return '';
+    const [h, min] = t.split(':');
+    const hr = parseInt(h);
+    return (hr % 12 || 12) + ':' + min + ' ' + (hr < 12 ? 'AM' : 'PM');
+  }
+
+  function renderTasks() {
+    const search = document.getElementById('search-inp').value.toLowerCase();
+    let list = tasks.filter(t => {
+      const matchSearch = t.title.toLowerCase().includes(search) ||
+                          (t.desc || '').toLowerCase().includes(search);
+      if (!matchSearch) return false;
+      if (filter === 'done')    return t.done;
+      if (filter === 'pending') return !t.done;
+      if (filter === 'high')    return t.priority === 'high';
+      if (filter === 'medium')  return t.priority === 'medium';
+      if (filter === 'low')     return t.priority === 'low';
+      return true;
+    });
+
+    // Stats
+    document.getElementById('stat-total').textContent   = tasks.length + ' Total';
+    document.getElementById('stat-done').textContent    = tasks.filter(t => t.done).length + ' Done';
+    document.getElementById('stat-pending').textContent = tasks.filter(t => !t.done).length + ' Pending';
+
+    const wrap = document.getElementById('tasks-list');
+    if (list.length === 0) {
+      wrap.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>No tasks found. Add one above!</div>`;
+      return;
+    }
+
+    wrap.innerHTML = list.map(t => `
+      <div class="task-card priority-${t.priority} ${t.done ? 'done' : ''}">
+        <div class="task-top">
+          <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleDone(${t.id})" title="Mark complete"></div>
+          <div class="task-body">
+            <div class="task-title">${escHtml(t.title)}</div>
+            ${t.desc ? `<div class="task-desc">${escHtml(t.desc)}</div>` : ''}
+            <div class="task-meta">
+              ${t.date ? `<span class="meta-tag tag-date">📅 ${formatDate(t.date)}</span>` : ''}
+              ${t.time ? `<span class="meta-tag tag-time">🕐 ${formatTime(t.time)}</span>` : ''}
+              <span class="meta-tag tag-${t.priority}">${
+                t.priority === 'high' ? '🔴 High' :
+                t.priority === 'low'  ? '🟢 Low'  : '🟡 Medium'
+              }</span>
+              <span class="meta-tag tag-category">${escHtml(t.category)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="act-btn" onclick="openEdit(${t.id})">✏️ Edit</button>
+          <button class="act-btn" onclick="toggleDone(${t.id})">${t.done ? '↩ Undo' : '✔ Complete'}</button>
+          <button class="act-btn del" onclick="deleteTask(${t.id})">🗑 Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  // Close modal on overlay click
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Enter key to add task
+  document.getElementById('inp-title').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') addTask();
+  });
+
+  renderTasks();
+</script>
+</body>
+</html>
